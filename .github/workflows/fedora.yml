@@ -1,0 +1,41 @@
+name: Fedora native install
+
+on:
+  push:
+    paths:
+      - "pyproject.toml"
+      - "vectorcraft/**"
+      - "scripts/fedora/**"
+      - ".github/workflows/fedora.yml"
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "vectorcraft/**"
+      - "scripts/fedora/**"
+      - ".github/workflows/fedora.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fedora:
+    name: Fedora ${{ matrix.fedora }}
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:${{ matrix.fedora }}
+    strategy:
+      fail-fast: false
+      matrix:
+        fedora: ["41", "42"]
+    steps:
+      - name: Install git (needed by checkout)
+        run: dnf install -y git
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Fedora installer
+        run: scripts/fedora/install.sh --with faiss-cpu
+
+      - name: Smoke test
+        run: ~/.local/bin/vectorcraft-python scripts/fedora/smoke_test.py
